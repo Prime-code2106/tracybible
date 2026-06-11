@@ -1,0 +1,153 @@
+/* ── iOS Native Polish ────────────────────────────────────────────────────── */
+
+/* iOS-style spring animations */
+@keyframes springFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes springSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* View transitions */
+.view-enter {
+  animation: springFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.view-slide-up {
+  animation: springSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Button press feedback */
+button,
+.btn-primary,
+.btn-ghost,
+.nav-btn,
+.quick-card,
+.book-btn,
+.chapter-btn,
+.bookmark-card {
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active,
+.btn-primary:active,
+.btn-ghost:active,
+.nav-btn:active,
+.quick-card:active,
+.book-btn:active,
+.chapter-btn:active,
+.bookmark-card:active {
+  transform: scale(0.96);
+}
+
+/* iOS-style rounded corners */
+.card {
+  border-radius: 16px;
+}
+
+.card-sm {
+  border-radius: 12px;
+}
+
+.button {
+  border-radius: 12px;
+}
+
+.button-sm {
+  border-radius: 10px;
+}
+
+/* Momentum scrolling */
+.scroll-area {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Prevent overscroll on fixed elements */
+#nav,
+.reader-header,
+.fixed-header {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+}
+
+/* iOS safe area support */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* Bottom padding handled by nav-height + safe-area-inset-bottom */
+}
+
+/* Safe area for navigation */
+#nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth spring transitions */
+.smooth-spring {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* iOS-style focus states */
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent-pink);
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1);
+}
+
+/* Disable text selection on UI elements */
+button,
+.nav-btn,
+.icon-btn {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* iOS-style dividers */
+.divider {
+  height: 0.5px;
+  background: var(--border-color);
+  border: none;
+}
+
+/* Haptic-style visual feedback for toggles */
+.toggle {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toggle:active {
+  transform: scale(0.94);
+}
+
+/* iOS-style pull-to-refresh hint (visual only) */
+.pull-indicator {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Edge-to-edge display support */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .home-hero,
+  .reader-header {
+    padding-top: calc(20px + env(safe-area-inset-top));
+  }
+}

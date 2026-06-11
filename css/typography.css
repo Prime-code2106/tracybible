@@ -1,0 +1,103 @@
+/* ── Typography System ────────────────────────────────────────────────────── */
+
+/* iOS-optimized font stack */
+:root {
+  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', sans-serif;
+  --user-font-size: 18px; /* User-adjustable via TypographySystem */
+}
+
+/* Base typography */
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-system);
+  font-size: 17px; /* iOS standard body size */
+  line-height: 1.6;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings */
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+h3 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Body text with improved readability */
+p {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* Verse text - user adjustable */
+.verse-text {
+  font-size: var(--user-font-size);
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+/* Secondary text */
+.text-secondary {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Tertiary/muted text */
+.text-tertiary,
+.muted {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+/* Navigation labels */
+.nav-btn span {
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+
+/* Labels and caps */
+.label-caps {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Emphasis */
+strong {
+  font-weight: 600;
+}
+
+/* Links */
+a {
+  color: var(--accent-pink);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}

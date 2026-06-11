@@ -1,0 +1,47 @@
+/* ── Theme Variables ──────────────────────────────────────────────────────── */
+
+:root {
+  /* Default to dark theme variables - will be overridden by ThemeManager */
+  --bg-primary: #1a0a1a;
+  --bg-secondary: #2a0e2a;
+  --bg-tertiary: #350e35;
+  --bg-elevated: #2d0f2d;
+  
+  --text-primary: #fff0f6;
+  --text-secondary: #d497b8;
+  --text-tertiary: #9a6080;
+  
+  --accent-pink: #c2185b;
+  --accent-pink-dark: #880e4f;
+  --accent-pink-light: #e91e8c;
+  --accent-gold: #f5c842;
+  --accent-gold-soft: #ffe082;
+  
+  --border-color: rgba(194, 24, 91, 0.2);
+  --glass-bg: rgba(42, 14, 42, 0.85);
+  --glass-border: rgba(194, 24, 91, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  
+  --theme-color: #c2185b;
+}
+
+/* Theme transition for smooth switching */
+body,
+body * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Prevent transition on page load */
+body.no-transition,
+body.no-transition * {
+  transition: none !important;
+}
+
+/* Theme-specific overrides using data attribute */
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}

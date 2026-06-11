@@ -1,0 +1,167 @@
+/* ── Premium Cyber Glassmorphism Effects (Pink Theme) ─────────────────────── */
+
+/* Base glass effect with neon pink glow borders */
+.glass-card {
+  position: relative;
+  background: rgba(30, 10, 30, 0.4);
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.1);
+  border: 1px solid rgba(194, 24, 91, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(194, 24, 91, 0.15);
+}
+
+/* Neon pink glow border effect */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(194, 24, 91, 0.6) 0%,
+    rgba(233, 30, 140, 0.5) 25%,
+    transparent 50%,
+    transparent 75%,
+    rgba(194, 24, 91, 0.4) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.8;
+  filter: blur(0.5px);
+}
+
+/* Electric pink light leak effect on top edge */
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    rgba(194, 24, 91, 0.7) 20%,
+    rgba(233, 30, 140, 1) 50%,
+    rgba(194, 24, 91, 0.7) 80%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  filter: blur(1px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.glass-nav {
+  position: relative;
+  background: rgba(20, 10, 20, 0.6);
+  backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+  border-top: 1px solid rgba(194, 24, 91, 0.4);
+  box-shadow: 
+    0 -8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 40px rgba(194, 24, 91, 0.2);
+}
+
+/* Glowing pink top border for nav */
+.glass-nav::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(194, 24, 91, 0.4) 10%,
+    rgba(233, 30, 140, 0.8) 50%,
+    rgba(194, 24, 91, 0.4) 90%,
+    transparent 100%
+  );
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.glass-modal {
+  position: relative;
+  background: rgba(35, 15, 35, 0.5);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.15);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.15);
+  border: 1px solid rgba(194, 24, 91, 0.35);
+  box-shadow: 
+    0 -12px 48px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 30px rgba(194, 24, 91, 0.25);
+}
+
+/* Modal neon pink border with stronger glow */
+.glass-modal::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(194, 24, 91, 0.8) 0%,
+    rgba(233, 30, 140, 0.6) 20%,
+    transparent 40%,
+    transparent 60%,
+    rgba(194, 24, 91, 0.5) 80%,
+    rgba(194, 24, 91, 0.7) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.9;
+  filter: blur(0.5px);
+}
+
+.glass-menu {
+  position: relative;
+  background: rgba(30, 10, 30, 0.5);
+  backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+  border: 1px solid rgba(194, 24, 91, 0.35);
+  box-shadow: 
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 25px rgba(194, 24, 91, 0.2);
+}
+
+/* Menu border pink glow */
+.glass-menu::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(194, 24, 91, 0.6) 0%,
+    rgba(233, 30, 140, 0.4) 30%,
+    transparent 60%,
+    rgba(194, 24, 91, 0.4) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.8;
+  filter: blur(0.5px);
+}
+
+/* Animated pink glow pulse (subtle) */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; filter: blur(1px); }
+  50% { opacity: 0.9; filter: blur(1.5px); }
+}
+
+.glass-card::after,
+.glass-modal::after {
+  animation: glowPulse 3s ease-in-out infinite;
+}
