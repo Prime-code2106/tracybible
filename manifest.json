@@ -6,10 +6,5 @@
   "display": "standalone",
   "background_color": "#1a0a1a",
   "theme_color": "#c2185b",
-  "orientation": "portrait",
-  "icons": [
-    { "src": "image/image.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "image/image.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "image/image.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+  "orientation": "portrait"
 }

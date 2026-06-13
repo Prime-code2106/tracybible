@@ -1,4 +1,4 @@
-// ─── SplashScreen: Removed - Skip directly to welcome ────────────────────────
+// ─── SplashScreen: Text-based "Tracy's Bible" splash ─────────────────────────
 
 class SplashScreen {
   constructor() {
@@ -6,13 +6,57 @@ class SplashScreen {
   }
 
   shouldShow() {
-    // Splash screen disabled - skip to welcome
-    return false;
+    // Show splash once per session
+    const shown = sessionStorage.getItem(this.SPLASH_SHOWN_KEY);
+    return !shown;
   }
 
   show(callback) {
-    // Skip splash, go directly to callback (welcome screen)
-    if (callback) callback();
+    if (!this.shouldShow()) {
+      if (callback) callback();
+      return;
+    }
+
+    const splash = document.createElement('div');
+    splash.id = 'splash-screen';
+    splash.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(160deg, #380a38 0%, #1a0a1a 100%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    `;
+
+    splash.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:64px;margin-bottom:24px;animation:fadeIn 0.8s ease;">✝</div>
+        <h1 style="font-size:42px;font-weight:700;color:#fff0f6;margin-bottom:12px;letter-spacing:-1px;animation:fadeIn 1s ease 0.3s both;">Tracy's Bible</h1>
+        <p style="font-size:16px;color:#d497b8;font-style:italic;animation:fadeIn 1s ease 0.5s both;">A gift of faith, love & grace</p>
+      </div>
+      <style>
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      </style>
+    `;
+
+    document.body.appendChild(splash);
+    sessionStorage.setItem(this.SPLASH_SHOWN_KEY, 'true');
+
+    // Auto-dismiss after 2.5 seconds
+    setTimeout(() => {
+      splash.style.opacity = '0';
+      setTimeout(() => {
+        splash.remove();
+        if (callback) callback();
+      }, 500);
+    }, 2500);
   }
 }
 
