@@ -850,20 +850,40 @@ function escQ(s) { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 // ─── PWA Install ──────────────────────────────────────────────────────────────
 let deferredPrompt = null;
 
-// Capture the install prompt event
+// Check if iOS
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+// Check if already installed
+function isInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+}
+
+// Capture the install prompt event (Android/Desktop)
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   window.deferredPrompt = e;
   
   // Show install popup once per session
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   const hasSeenPrompt = sessionStorage.getItem('tb_install_prompt_shown');
   
-  if (!isStandalone && !hasSeenPrompt) {
+  if (!isInstalled() && !hasSeenPrompt) {
     setTimeout(() => {
       showInstallPopup();
     }, 3000); // Show after 3 seconds
+  }
+});
+
+// For iOS, show install popup after app loads
+window.addEventListener('load', () => {
+  const hasSeenPrompt = sessionStorage.getItem('tb_install_prompt_shown');
+  
+  if (isIOS() && !isInstalled() && !hasSeenPrompt) {
+    setTimeout(() => {
+      showInstallPopup();
+    }, 3000);
   }
 });
 
@@ -883,6 +903,8 @@ function showInstallPopup() {
   const dismissed = sessionStorage.getItem('tb_install_dismissed');
   if (dismissed) return;
   
+  const ios = isIOS();
+  
   const popup = document.createElement('div');
   popup.id = 'install-popup';
   popup.className = 'install-popup';
@@ -895,15 +917,26 @@ function showInstallPopup() {
         <i class="ti ti-download" style="font-size:48px;color:var(--accent-pink);"></i>
       </div>
       <h3 style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px;text-align:center;">Install Tracy's Bible</h3>
-      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;text-align:center;line-height:1.5;">Get quick access and offline reading by installing the app on your phone</p>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;text-align:center;line-height:1.5;">
+        ${ios ? 
+          'Tap the Share button <span style="font-size:18px;">⎙</span> below, then select "Add to Home Screen"' : 
+          'Get quick access and offline reading by installing the app on your phone'
+        }
+      </p>
       <div style="display:flex;gap:10px;">
         <button onclick="dismissInstallPopup()" class="btn-ghost" style="flex:1;justify-content:center;">
           Maybe Later
         </button>
-        <button onclick="installApp()" class="btn-primary" style="flex:1;justify-content:center;">
-          <i class="ti ti-download" style="margin-right:6px;"></i>
-          Install
-        </button>
+        ${!ios ? `
+          <button onclick="installApp()" class="btn-primary" style="flex:1;justify-content:center;">
+            <i class="ti ti-download" style="margin-right:6px;"></i>
+            Install
+          </button>
+        ` : `
+          <button onclick="dismissInstallPopup()" class="btn-primary" style="flex:1;justify-content:center;">
+            Got it!
+          </button>
+        `}
       </div>
     </div>
   `;
@@ -936,15 +969,8 @@ function dismissInstallPopup() {
 // Install app function
 async function installApp() {
   if (!deferredPrompt && !window.deferredPrompt) {
-    // Fallback for iOS - show manual instructions
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (isIOS) {
-      dismissInstallPopup();
-      showToast('Tap Share ⎙ then "Add to Home Screen"');
-    } else {
-      dismissInstallPopup();
-      showToast('Install not available on this browser');
-    }
+    dismissInstallPopup();
+    showToast('Install not available on this browser');
     return;
   }
 
