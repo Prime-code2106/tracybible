@@ -383,24 +383,37 @@ function renderReader(verses) {
   // Add click listeners to verses
   document.querySelectorAll('.verse').forEach(verseEl => {
     verseEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const book = verseEl.dataset.book;
       const chapter = parseInt(verseEl.dataset.chapter);
       const verse = parseInt(verseEl.dataset.verse);
       const text = verseEl.dataset.text;
+      
+      console.log('Verse clicked:', {book, chapter, verse, text: text.substring(0, 50)});
       verseMenu(e, book, chapter, verse, text);
     });
   });
 }
 
 function verseMenu(e, book, chapter, verse, text) {
+  console.log('verseMenu called:', {book, chapter, verse});
+  
   e.stopPropagation();
   e.preventDefault();
   
   const existing = $('verse-menu');
-  if (existing) existing.remove();
+  if (existing) {
+    console.log('Removing existing menu');
+    existing.remove();
+  }
   
   const key = `${book}-${chapter}-${verse}`;
   const isBm = STATE.bookmarks.some(b=>b.key===key);
+  
+  console.log('Creating menu for verse:', key, 'isBookmarked:', isBm);
+  
   const menu = document.createElement('div');
   menu.id = 'verse-menu';
   menu.className = 'verse-ctx-menu';
@@ -422,12 +435,14 @@ function verseMenu(e, book, chapter, verse, text) {
   `;
   
   document.body.appendChild(menu);
+  console.log('Menu appended to body');
   
   // Add event listeners to buttons
   menu.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const action = btn.dataset.action;
+      console.log('Menu button clicked:', action);
       
       switch(action) {
         case 'bookmark':
@@ -459,7 +474,10 @@ function verseMenu(e, book, chapter, verse, text) {
   setTimeout(() => {
     document.addEventListener('click', () => { 
       const m=$('verse-menu'); 
-      if(m) m.remove(); 
+      if(m) {
+        console.log('Closing menu from outside click');
+        m.remove();
+      }
     }, {once:true});
   }, 100);
 }
@@ -1009,7 +1027,7 @@ function showInstallPopup() {
       <h3 style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px;text-align:center;">Install Tracy's Bible</h3>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;text-align:center;line-height:1.5;">
         ${ios ? 
-          'Tap the Share button <span style="font-size:18px;">⎙</span> below, then select "Add to Home Screen"' : 
+          '<strong>Install as an app:</strong><br>1. Tap the Share button <span style="font-size:20px;">⎙</span><br>2. Select "Add to Home Screen"<br>3. Tap "Add"<br><br>The app will work offline and feel like a native app!' : 
           'Get quick access and offline reading by installing the app on your phone'
         }
       </p>
