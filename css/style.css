@@ -383,21 +383,50 @@ textarea { resize: vertical; min-height: 90px; }
 .verse-bm-icon { color: var(--accent-gold); font-size: 15px; margin-top: 4px; flex-shrink: 0; }
 
 /* ── Verse Context Menu ──────────────────────────────────────────────────── */
+.verse-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .verse-ctx-menu {
   position: fixed;
   bottom: calc(var(--nav-height) + 12px + env(safe-area-inset-bottom));
   left: 16px; right: 16px;
-  background: var(--glass-bg);
+  background: var(--bg-elevated);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 0.5px solid var(--glass-border);
+  border: 2px solid var(--accent-pink);
   border-radius: 16px;
   padding: 12px;
-  z-index: 200;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 0 -8px 32px var(--shadow-color);
+  box-shadow: 0 -8px 32px rgba(194, 24, 91, 0.6), 0 0 0 1px var(--glass-border);
+  animation: slideUpMenu 0.3s ease;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUpMenu {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .ctx-ref {
   font-size: 13px;
@@ -408,15 +437,24 @@ textarea { resize: vertical; min-height: 90px; }
   margin-bottom: 4px;
 }
 .verse-ctx-menu button {
-  padding: 11px 12px;
+  padding: 14px 12px;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 16px;
   text-align: left;
-  display: flex; align-items: center; gap: 10px;
-  transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
 }
-.verse-ctx-menu button:hover, .verse-ctx-menu button:active { 
-  background: rgba(194,24,91,0.12); 
+.verse-ctx-menu button:active { 
+  background: var(--accent-pink); 
+  color: white;
   transform: scale(0.98);
 }
 .verse-ctx-menu button.ctx-close { color: var(--text-tertiary); font-size: 14px; }

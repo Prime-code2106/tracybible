@@ -403,10 +403,15 @@ function verseMenu(e, book, chapter, verse, text) {
   e.stopPropagation();
   e.preventDefault();
   
+  // Remove any existing menu and backdrop
   const existing = $('verse-menu');
   if (existing) {
     console.log('Removing existing menu');
     existing.remove();
+  }
+  const existingBackdrop = $('verse-menu-backdrop');
+  if (existingBackdrop) {
+    existingBackdrop.remove();
   }
   
   const key = `${book}-${chapter}-${verse}`;
@@ -414,6 +419,14 @@ function verseMenu(e, book, chapter, verse, text) {
   
   console.log('Creating menu for verse:', key, 'isBookmarked:', isBm);
   
+  // Create backdrop
+  const backdrop = document.createElement('div');
+  backdrop.id = 'verse-menu-backdrop';
+  backdrop.className = 'verse-menu-backdrop';
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+  document.body.appendChild(backdrop);
+  
+  // Create menu
   const menu = document.createElement('div');
   menu.id = 'verse-menu';
   menu.className = 'verse-ctx-menu';
@@ -437,10 +450,23 @@ function verseMenu(e, book, chapter, verse, text) {
   document.body.appendChild(menu);
   console.log('Menu appended to body');
   
+  // Prevent menu from closing when clicking inside it
+  menu.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
+  // Close menu when clicking backdrop
+  backdrop.addEventListener('click', () => {
+    console.log('Backdrop clicked, closing menu');
+    menu.remove();
+    backdrop.remove();
+  });
+  
   // Add event listeners to buttons
   menu.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      e.preventDefault();
       const action = btn.dataset.action;
       console.log('Menu button clicked:', action);
       
@@ -465,21 +491,11 @@ function verseMenu(e, book, chapter, verse, text) {
           break;
         case 'close':
           menu.remove();
+          backdrop.remove();
           break;
       }
     });
   });
-  
-  // Close menu when clicking outside
-  setTimeout(() => {
-    document.addEventListener('click', () => { 
-      const m=$('verse-menu'); 
-      if(m) {
-        console.log('Closing menu from outside click');
-        m.remove();
-      }
-    }, {once:true});
-  }, 100);
 }
 
 function toggleBookmark(key, book, chapter, verse, text) {
@@ -498,6 +514,7 @@ function toggleBookmark(key, book, chapter, verse, text) {
     showToast('Error saving bookmark');
   }
   const m = $('verse-menu'); if(m) m.remove();
+  const b = $('verse-menu-backdrop'); if(b) b.remove();
   if (STATE.view === 'reader') openChapter(STATE.book, STATE.chapter);
 }
 
@@ -506,12 +523,14 @@ function highlightVerse(key, color) {
   else STATE.highlight[key] = color;
   localStorage.setItem('tb_highlight', JSON.stringify(STATE.highlight));
   const m = $('verse-menu'); if(m) m.remove();
+  const b = $('verse-menu-backdrop'); if(b) b.remove();
   if (STATE.view === 'reader') openChapter(STATE.book, STATE.chapter);
 }
 
 function copyVerse(ref, text) {
   navigator.clipboard.writeText(`"${text.replace(/\\'/g,"'")}" — ${ref.replace(/\\'/g,"'")}`).catch(()=>{});
   const m = $('verse-menu'); if(m) m.remove();
+  const b = $('verse-menu-backdrop'); if(b) b.remove();
   showToast('Verse copied!');
 }
 
@@ -599,6 +618,7 @@ function deleteJournal(i) {
 
 function addJournalFromVerse(ref, text) {
   const m = $('verse-menu'); if(m) m.remove();
+  const b = $('verse-menu-backdrop'); if(b) b.remove();
   STATE.journal.push({ title: ref.replace(/\\'/g,"'"), text: `"${text.replace(/\\'/g,"'")}"`, date: new Date().toISOString(), verse: ref.replace(/\\'/g,"'") });
   localStorage.setItem('tb_journal', JSON.stringify(STATE.journal));
   showToast('Added to journal!');
@@ -1027,7 +1047,7 @@ function showInstallPopup() {
       <h3 style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px;text-align:center;">Install Tracy's Bible</h3>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;text-align:center;line-height:1.5;">
         ${ios ? 
-          '<strong>Install as an app:</strong><br>1. Tap the Share button <span style="font-size:20px;">⎙</span><br>2. Select "Add to Home Screen"<br>3. Tap "Add"<br><br>The app will work offline and feel like a native app!' : 
+          '<strong>Install as a PWA:</strong><br>1. Tap the Share button <span style="font-size:20px;">⎙</span><br>2. Select "Add to Home Screen"<br>3. Tap "Add"<br><br>This installs the app completely - it will work offline and run like a native app!' : 
           'Get quick access and offline reading by installing the app on your phone'
         }
       </p>
