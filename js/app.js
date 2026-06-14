@@ -1,5 +1,31 @@
 // ─── State ───────────────────────────────────────────────────────────────────
 
+// Check localStorage availability
+function isLocalStorageAvailable() {
+  try {
+    const test = '__storage_test__';
+    localStorage.setItem(test, test);
+    localStorage.removeItem(test);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Safe localStorage getter
+function getStorageItem(key, defaultValue = '[]') {
+  if (!isLocalStorageAvailable()) {
+    console.warn('localStorage not available');
+    return defaultValue;
+  }
+  try {
+    return localStorage.getItem(key) || defaultValue;
+  } catch (e) {
+    console.error('Error reading from localStorage:', e);
+    return defaultValue;
+  }
+}
+
 // Global system instances
 let chapterCache;
 let themeManager;
@@ -12,9 +38,9 @@ const STATE = {
   book: null,
   chapter: null,
   view: 'home',
-  bookmarks: JSON.parse(localStorage.getItem('tb_bookmarks') || '[]'),
-  journal: JSON.parse(localStorage.getItem('tb_journal') || '[]'),
-  highlight: JSON.parse(localStorage.getItem('tb_highlight') || '{}'),
+  bookmarks: JSON.parse(getStorageItem('tb_bookmarks', '[]')),
+  journal: JSON.parse(getStorageItem('tb_journal', '[]')),
+  highlight: JSON.parse(getStorageItem('tb_highlight', '{}')),
   searchQuery: '',
   searchResults: [],
   verseOfDay: null,
@@ -385,10 +411,20 @@ function verseMenu(e, book, chapter, verse, text) {
 }
 
 function toggleBookmark(key, book, chapter, verse, text) {
-  const idx = STATE.bookmarks.findIndex(b=>b.key===key);
-  if (idx > -1) STATE.bookmarks.splice(idx,1);
-  else STATE.bookmarks.push({key, book, chapter, verse: parseInt(verse), text, version: STATE.version, date: new Date().toISOString()});
-  localStorage.setItem('tb_bookmarks', JSON.stringify(STATE.bookmarks));
+  try {
+    const idx = STATE.bookmarks.findIndex(b=>b.key===key);
+    if (idx > -1) {
+      STATE.bookmarks.splice(idx,1);
+      showToast('Bookmark removed');
+    } else {
+      STATE.bookmarks.push({key, book, chapter, verse: parseInt(verse), text, version: STATE.version, date: new Date().toISOString()});
+      showToast('Verse bookmarked!');
+    }
+    localStorage.setItem('tb_bookmarks', JSON.stringify(STATE.bookmarks));
+  } catch (error) {
+    console.error('Error saving bookmark:', error);
+    showToast('Error saving bookmark');
+  }
   const m = $('verse-menu'); if(m) m.remove();
   if (STATE.view === 'reader') openChapter(STATE.book, STATE.chapter);
 }
