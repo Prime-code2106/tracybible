@@ -44,6 +44,11 @@ const STATE = {
   searchQuery: '',
   searchResults: [],
   verseOfDay: null,
+  bookmarkSort: localStorage.getItem('tb_bookmark_sort') || 'newest',
+  bookmarkVersionFilter: localStorage.getItem('tb_bookmark_version_filter') || 'all',
+  bookmarkSearchQuery: '',
+  lastDeletedBookmark: null,
+  deleteUndoTimeout: null,
 };
 
 const VERSIONS = {
@@ -345,6 +350,10 @@ function renderReader(verses) {
   const totalChaps = CHAPTER_COUNTS[STATE.book] || 1;
   const prevCh = STATE.chapter > 1 ? STATE.chapter - 1 : null;
   const nextCh = STATE.chapter < totalChaps ? STATE.chapter + 1 : null;
+
+  // Create Set of bookmark keys for O(1) lookup performance
+  const bookmarkKeys = new Set(STATE.bookmarks.map(b => b.key));
+
   $('main').innerHTML = `
     <div class="page-wrap">
       <div class="reader-header">
@@ -363,7 +372,7 @@ function renderReader(verses) {
         ${(verses||[]).map(v => {
           const key = `${STATE.book}-${STATE.chapter}-${v.verse}`;
           const hl = STATE.highlight[key] || '';
-          const bm = STATE.bookmarks.find(b=>b.key===key);
+          const bm = bookmarkKeys.has(key);
           return `
             <div class="verse ${hl ? 'hl-'+hl : ''}" id="v${v.verse}" data-book="${STATE.book}" data-chapter="${STATE.chapter}" data-verse="${v.verse}" data-text="${v.text.replace(/"/g, '&quot;')}">
               <span class="verse-num">${v.verse}</span>
@@ -379,18 +388,18 @@ function renderReader(verses) {
       </div>
     </div>
   `;
-  
+
   // Add click listeners to verses
   document.querySelectorAll('.verse').forEach(verseEl => {
     verseEl.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const book = verseEl.dataset.book;
       const chapter = parseInt(verseEl.dataset.chapter);
       const verse = parseInt(verseEl.dataset.verse);
       const text = verseEl.dataset.text;
-      
+
       console.log('Verse clicked:', {book, chapter, verse, text: text.substring(0, 50)});
       verseMenu(e, book, chapter, verse, text);
     });
@@ -515,7 +524,30 @@ function toggleBookmark(key, book, chapter, verse, text) {
   }
   const m = $('verse-menu'); if(m) m.remove();
   const b = $('verse-menu-backdrop'); if(b) b.remove();
-  if (STATE.view === 'reader') openChapter(STATE.book, STATE.chapter);
+
+  // Optimize: update DOM directly instead of full re-render
+  if (STATE.view === 'reader') {
+    const verseEl = document.getElementById(`v${verse}`);
+    if (verseEl) {
+      // Update bookmark icon
+      const existingIcon = verseEl.querySelector('.verse-bm-icon');
+      const isBookmarked = STATE.bookmarks.some(b => b.key === key);
+
+      if (isBookmarked && !existingIcon) {
+        // Add bookmark icon
+        const icon = document.createElement('i');
+        icon.className = 'ti ti-bookmark-filled verse-bm-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        verseEl.appendChild(icon);
+      } else if (!isBookmarked && existingIcon) {
+        // Remove bookmark icon
+        existingIcon.remove();
+      }
+    } else {
+      // Fallback to full re-render if verse element not found
+      openChapter(STATE.book, STATE.chapter);
+    }
+  }
 }
 
 function highlightVerse(key, color) {
@@ -535,9 +567,55 @@ function copyVerse(ref, text) {
 }
 
 function renderBookmarks() {
+  // Apply filters and sorting
+  let filteredBookmarks = [...STATE.bookmarks];
+
+  // Filter by version
+  if (STATE.bookmarkVersionFilter !== 'all') {
+    filteredBookmarks = filteredBookmarks.filter(b => b.version === STATE.bookmarkVersionFilter);
+  }
+
+  // Filter by search query
+  if (STATE.bookmarkSearchQuery.trim()) {
+    const query = STATE.bookmarkSearchQuery.toLowerCase();
+    filteredBookmarks = filteredBookmarks.filter(b =>
+      b.book.toLowerCase().includes(query) ||
+      b.text.toLowerCase().includes(query) ||
+      `${b.book} ${b.chapter}:${b.verse}`.toLowerCase().includes(query)
+    );
+  }
+
+  // Sort bookmarks
+  switch (STATE.bookmarkSort) {
+    case 'newest':
+      filteredBookmarks.sort((a, b) => new Date(b.date) - new Date(a.date));
+      break;
+    case 'oldest':
+      filteredBookmarks.sort((a, b) => new Date(a.date) - new Date(b.date));
+      break;
+    case 'book':
+      filteredBookmarks.sort((a, b) => {
+        const aIdx = ALL_BOOKS.indexOf(a.book);
+        const bIdx = ALL_BOOKS.indexOf(b.book);
+        if (aIdx !== bIdx) return aIdx - bIdx;
+        if (a.chapter !== b.chapter) return a.chapter - b.chapter;
+        return a.verse - b.verse;
+      });
+      break;
+    case 'alphabetical':
+      filteredBookmarks.sort((a, b) => {
+        const refA = `${a.book} ${a.chapter}:${a.verse}`;
+        const refB = `${b.book} ${b.chapter}:${b.verse}`;
+        return refA.localeCompare(refB);
+      });
+      break;
+  }
+
   $('main').innerHTML = `
     <div class="page-wrap">
-      <div class="page-header"><h2><i class="ti ti-bookmark"></i> Saved Verses</h2></div>
+      <div class="page-header">
+        <h2><i class="ti ti-bookmark"></i> Saved Verses</h2>
+      </div>
       ${STATE.bookmarks.length === 0 ? `
         <div class="empty-state">
           <i class="ti ti-bookmark" style="font-size:48px;color:var(--accent-pink)"></i>
@@ -545,30 +623,217 @@ function renderBookmarks() {
           <p class="muted">Tap any verse while reading to bookmark it.</p>
         </div>
       ` : `
-        <div class="bookmark-list">
-          ${STATE.bookmarks.map((b,i) => {
-            const safeBook = escQ(b.book);
-            return `
-              <div class="bookmark-card">
-                <div class="bm-ref">${b.book} ${b.chapter}:${b.verse} <span class="ver-tag">${b.version.toUpperCase()}</span></div>
-                <p class="bm-text">"${b.text.trim()}"</p>
-                <div class="bm-actions">
-                  <button onclick="openChapter('${safeBook}',${b.chapter})" class="btn-ghost sm">Read</button>
-                  <button onclick="removeBookmark(${i})" class="btn-ghost sm danger">Remove</button>
-                </div>
-              </div>
-            `;
-          }).join('')}
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <input
+              type="text"
+              id="bookmark-search"
+              placeholder="Search bookmarks..."
+              value="${STATE.bookmarkSearchQuery}"
+              style="flex:1;min-width:200px;font-size:14px;"
+              aria-label="Search bookmarks by book name or verse text"
+            />
+            <button onclick="exportBookmarks()" class="btn-ghost sm" style="white-space:nowrap;" aria-label="Export all bookmarks to JSON file">
+              <i class="ti ti-download" aria-hidden="true"></i> Export
+            </button>
+            <button onclick="importBookmarksPrompt()" class="btn-ghost sm" style="white-space:nowrap;" aria-label="Import bookmarks from JSON file">
+              <i class="ti ti-upload" aria-hidden="true"></i> Import
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="bookmark-sort" class="btn-ghost sm" style="flex:1;min-width:150px;" onchange="updateBookmarkSort(this.value)" aria-label="Sort bookmarks by">
+              <option value="newest" ${STATE.bookmarkSort==='newest'?'selected':''}>Newest First</option>
+              <option value="oldest" ${STATE.bookmarkSort==='oldest'?'selected':''}>Oldest First</option>
+              <option value="book" ${STATE.bookmarkSort==='book'?'selected':''}>Book Order</option>
+              <option value="alphabetical" ${STATE.bookmarkSort==='alphabetical'?'selected':''}>Alphabetical</option>
+            </select>
+            <select id="bookmark-version-filter" class="btn-ghost sm" style="flex:1;min-width:120px;" onchange="updateBookmarkVersionFilter(this.value)" aria-label="Filter bookmarks by Bible version">
+              <option value="all" ${STATE.bookmarkVersionFilter==='all'?'selected':''}>All Versions</option>
+              ${Object.entries(VERSIONS).map(([k,v]) =>
+                `<option value="${k}" ${STATE.bookmarkVersionFilter===k?'selected':''}>${v.label}</option>`
+              ).join('')}
+            </select>
+          </div>
         </div>
+        ${filteredBookmarks.length === 0 ? `
+          <div class="empty-state">
+            <i class="ti ti-search" style="font-size:48px;color:var(--accent-pink)"></i>
+            <p>No bookmarks match your filters.</p>
+          </div>
+        ` : `
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+            ${filteredBookmarks.length} of ${STATE.bookmarks.length} bookmark${STATE.bookmarks.length!==1?'s':''}
+          </p>
+          <div class="bookmark-list">
+            ${filteredBookmarks.map(b => {
+              const safeBook = escQ(b.book);
+              return `
+                <div class="bookmark-card">
+                  <div class="bm-ref">${b.book} ${b.chapter}:${b.verse} <span class="ver-tag">${b.version.toUpperCase()}</span></div>
+                  <p class="bm-text">"${b.text.trim()}"</p>
+                  <div class="bm-actions">
+                    <button onclick="openChapter('${safeBook}',${b.chapter})" class="btn-ghost sm">Read</button>
+                    <button onclick="removeBookmarkByKey('${b.key}')" class="btn-ghost sm danger">Remove</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
       `}
     </div>
   `;
+
+  // Add search input listener
+  const searchInput = $('bookmark-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      STATE.bookmarkSearchQuery = e.target.value;
+      renderBookmarks();
+    });
+  }
 }
 
-function removeBookmark(i) {
-  STATE.bookmarks.splice(i,1);
-  localStorage.setItem('tb_bookmarks', JSON.stringify(STATE.bookmarks));
+function updateBookmarkSort(value) {
+  STATE.bookmarkSort = value;
+  try {
+    localStorage.setItem('tb_bookmark_sort', value);
+  } catch (e) {
+    console.error('Error saving bookmark sort preference:', e);
+  }
   renderBookmarks();
+}
+
+function updateBookmarkVersionFilter(value) {
+  STATE.bookmarkVersionFilter = value;
+  try {
+    localStorage.setItem('tb_bookmark_version_filter', value);
+  } catch (e) {
+    console.error('Error saving version filter preference:', e);
+  }
+  renderBookmarks();
+}
+
+function exportBookmarks() {
+  try {
+    const data = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      bookmarks: STATE.bookmarks
+    };
+
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tracys-bible-bookmarks-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Bookmarks exported successfully!');
+  } catch (error) {
+    console.error('Error exporting bookmarks:', error);
+    showToast('Error exporting bookmarks');
+  }
+}
+
+function importBookmarksPrompt() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json,.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        const bookmarks = data.bookmarks || data;
+
+        if (!Array.isArray(bookmarks)) {
+          showToast('Invalid bookmark file format');
+          return;
+        }
+
+        // Merge with existing bookmarks, avoiding duplicates by key
+        const existingKeys = new Set(STATE.bookmarks.map(b => b.key));
+        let importedCount = 0;
+
+        bookmarks.forEach(b => {
+          if (b.key && !existingKeys.has(b.key)) {
+            STATE.bookmarks.push(b);
+            existingKeys.add(b.key);
+            importedCount++;
+          }
+        });
+
+        if (importedCount > 0) {
+          localStorage.setItem('tb_bookmarks', JSON.stringify(STATE.bookmarks));
+          showToast(`Imported ${importedCount} bookmark${importedCount!==1?'s':''}`);
+          renderBookmarks();
+        } else {
+          showToast('No new bookmarks to import');
+        }
+      } catch (error) {
+        console.error('Error importing bookmarks:', error);
+        showToast('Error importing bookmarks');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function removeBookmarkByKey(key) {
+  try {
+    const idx = STATE.bookmarks.findIndex(b => b.key === key);
+    if (idx === -1) {
+      showToast('Bookmark not found');
+      return;
+    }
+
+    // Show confirmation dialog
+    if (!confirm('Remove this bookmark?')) {
+      return;
+    }
+
+    // Clear any existing undo timeout
+    if (STATE.deleteUndoTimeout) {
+      clearTimeout(STATE.deleteUndoTimeout);
+    }
+
+    // Store for undo
+    STATE.lastDeletedBookmark = STATE.bookmarks[idx];
+
+    // Remove bookmark
+    STATE.bookmarks.splice(idx, 1);
+    localStorage.setItem('tb_bookmarks', JSON.stringify(STATE.bookmarks));
+
+    // Show toast with undo option
+    showToastWithUndo('Bookmark removed', () => {
+      if (STATE.lastDeletedBookmark) {
+        STATE.bookmarks.push(STATE.lastDeletedBookmark);
+        localStorage.setItem('tb_bookmarks', JSON.stringify(STATE.bookmarks));
+        STATE.lastDeletedBookmark = null;
+        showToast('Bookmark restored');
+        renderBookmarks();
+      }
+    });
+
+    // Clear undo after 5 seconds
+    STATE.deleteUndoTimeout = setTimeout(() => {
+      STATE.lastDeletedBookmark = null;
+    }, 5000);
+
+    renderBookmarks();
+  } catch (error) {
+    console.error('Error removing bookmark:', error);
+    showToast('Error removing bookmark');
+  }
 }
 
 function renderJournal() {
@@ -913,6 +1178,36 @@ function showToast(msg) {
   setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),400); }, 2500);
 }
 
+function showToastWithUndo(msg, undoCallback) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.display = 'flex';
+  t.style.alignItems = 'center';
+  t.style.justifyContent = 'space-between';
+  t.style.gap = '12px';
+
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = msg;
+
+  const undoBtn = document.createElement('button');
+  undoBtn.textContent = 'Undo';
+  undoBtn.style.cssText = 'background:var(--accent-gold);color:var(--bg-primary);border:none;padding:4px 12px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;';
+  undoBtn.onclick = () => {
+    undoCallback();
+    t.remove();
+  };
+
+  t.appendChild(msgSpan);
+  t.appendChild(undoBtn);
+
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>{
+    t.classList.remove('show');
+    setTimeout(()=>t.remove(),400);
+  }, 5000);
+}
+
 // ─── Birthday Countdown ───────────────────────────────────────────────────────
 let countdownInterval = null;
 
@@ -1123,39 +1418,62 @@ async function installApp() {
   window.deferredPrompt = null;
 }
 
+// ─── Deep Linking Support ────────────────────────────────────────────────────
+function handleDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Check for view parameter (from shortcuts)
+  const view = params.get('view');
+  if (view && ['home', 'books', 'bookmarks', 'journal', 'search', 'settings'].includes(view)) {
+    STATE.view = view;
+    return;
+  }
+
+  // Check for book parameter (from shortcuts)
+  const book = params.get('book');
+  if (book && ALL_BOOKS.includes(book)) {
+    STATE.view = 'chapters';
+    STATE.book = book;
+    return;
+  }
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   // Disable transitions on page load to prevent flash
   document.body.classList.add('no-transition');
-  
+
   // Initialize systems
   chapterCache = new ChapterCache();
   themeManager = new ThemeManager();
   splashScreen = new SplashScreen();
   welcomeScreen = new WelcomeScreen();
   typographySystem = new TypographySystem();
-  
+
   // Initialize theme and typography first
   themeManager.initialize();
   typographySystem.initialize();
-  
+
   // Re-enable transitions after a brief delay
   setTimeout(() => {
     document.body.classList.remove('no-transition');
   }, 100);
-  
+
+  // Handle deep links from manifest shortcuts
+  handleDeepLink();
+
   // Show splash screen first, then welcome screen
   splashScreen.show(() => {
     if (welcomeScreen.shouldShow()) {
       welcomeScreen.show();
     }
   });
-  
+
   // Register service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(()=>{});
   }
-  
+
   // Render app
   render();
 });

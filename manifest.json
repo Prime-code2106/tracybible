@@ -1,37 +1,73 @@
 {
   "name": "Tracy's Bible",
   "short_name": "Tracy's Bible",
-  "description": "A personal Bible gifted with love",
+  "description": "A personal Bible gifted with love - read, bookmark, and journal your faith journey with offline support across KJV, WEB, ASV, and BBE translations",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#1a0a1a",
   "theme_color": "#c2185b",
   "orientation": "portrait",
+  "categories": ["lifestyle", "books", "education"],
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Bookmarks",
+      "short_name": "Bookmarks",
+      "description": "View your saved verses",
+      "url": "/?view=bookmarks",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Search the Bible",
+      "url": "/?view=search",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "name": "Random Psalm",
+      "short_name": "Psalms",
+      "description": "Read the book of Psalms",
+      "url": "/?book=Psalms",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
