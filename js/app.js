@@ -365,7 +365,7 @@ function renderReader(verses) {
           const hl = STATE.highlight[key] || '';
           const bm = STATE.bookmarks.find(b=>b.key===key);
           return `
-            <div class="verse ${hl ? 'hl-'+hl : ''}" id="v${v.verse}" onclick="verseMenu(event,'${STATE.book}',${STATE.chapter},${v.verse},'${escQ(v.text)}')">
+            <div class="verse ${hl ? 'hl-'+hl : ''}" id="v${v.verse}" data-book="${STATE.book}" data-chapter="${STATE.chapter}" data-verse="${v.verse}" data-text="${v.text.replace(/"/g, '&quot;')}">
               <span class="verse-num">${v.verse}</span>
               <span class="verse-text">${v.text.trim()}</span>
               ${bm ? '<i class="ti ti-bookmark-filled verse-bm-icon" aria-hidden="true"></i>' : ''}
@@ -379,12 +379,26 @@ function renderReader(verses) {
       </div>
     </div>
   `;
+  
+  // Add click listeners to verses
+  document.querySelectorAll('.verse').forEach(verseEl => {
+    verseEl.addEventListener('click', (e) => {
+      const book = verseEl.dataset.book;
+      const chapter = parseInt(verseEl.dataset.chapter);
+      const verse = parseInt(verseEl.dataset.verse);
+      const text = verseEl.dataset.text;
+      verseMenu(e, book, chapter, verse, text);
+    });
+  });
 }
 
 function verseMenu(e, book, chapter, verse, text) {
   e.stopPropagation();
+  e.preventDefault();
+  
   const existing = $('verse-menu');
   if (existing) existing.remove();
+  
   const key = `${book}-${chapter}-${verse}`;
   const isBm = STATE.bookmarks.some(b=>b.key===key);
   const menu = document.createElement('div');
@@ -392,22 +406,62 @@ function verseMenu(e, book, chapter, verse, text) {
   menu.className = 'verse-ctx-menu';
   menu.innerHTML = `
     <div class="ctx-ref">${book} ${chapter}:${verse}</div>
-    <button onclick="toggleBookmark('${key}','${escQ(book)}',${chapter},${verse},'${escQ(text)}')">
+    <button data-action="bookmark">
       <i class="ti ${isBm?'ti-bookmark-off':'ti-bookmark'}"></i> ${isBm?'Remove bookmark':'Bookmark'}
     </button>
-    <button onclick="highlightVerse('${key}','pink')"><span class="hl-dot pink"></span> Pink</button>
-    <button onclick="highlightVerse('${key}','yellow')"><span class="hl-dot yellow"></span> Yellow</button>
-    <button onclick="highlightVerse('${key}','clear')"><i class="ti ti-eraser"></i> Clear highlight</button>
-    <button onclick="addJournalFromVerse('${escQ(book+' '+chapter+':'+verse)}','${escQ(text)}')">
+    <button data-action="highlight-pink"><span class="hl-dot pink"></span> Pink</button>
+    <button data-action="highlight-yellow"><span class="hl-dot yellow"></span> Yellow</button>
+    <button data-action="highlight-clear"><i class="ti ti-eraser"></i> Clear highlight</button>
+    <button data-action="journal">
       <i class="ti ti-pencil"></i> Add to journal
     </button>
-    <button onclick="copyVerse('${escQ(book+' '+chapter+':'+verse)}','${escQ(text)}')">
+    <button data-action="copy">
       <i class="ti ti-copy"></i> Copy verse
     </button>
-    <button class="ctx-close" onclick="document.getElementById('verse-menu').remove()"><i class="ti ti-x"></i> Close</button>
+    <button class="ctx-close" data-action="close"><i class="ti ti-x"></i> Close</button>
   `;
+  
   document.body.appendChild(menu);
-  document.addEventListener('click', () => { const m=$('verse-menu'); if(m) m.remove(); }, {once:true});
+  
+  // Add event listeners to buttons
+  menu.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      
+      switch(action) {
+        case 'bookmark':
+          toggleBookmark(key, book, chapter, verse, text);
+          break;
+        case 'highlight-pink':
+          highlightVerse(key, 'pink');
+          break;
+        case 'highlight-yellow':
+          highlightVerse(key, 'yellow');
+          break;
+        case 'highlight-clear':
+          highlightVerse(key, 'clear');
+          break;
+        case 'journal':
+          addJournalFromVerse(`${book} ${chapter}:${verse}`, text);
+          break;
+        case 'copy':
+          copyVerse(`${book} ${chapter}:${verse}`, text);
+          break;
+        case 'close':
+          menu.remove();
+          break;
+      }
+    });
+  });
+  
+  // Close menu when clicking outside
+  setTimeout(() => {
+    document.addEventListener('click', () => { 
+      const m=$('verse-menu'); 
+      if(m) m.remove(); 
+    }, {once:true});
+  }, 100);
 }
 
 function toggleBookmark(key, book, chapter, verse, text) {
