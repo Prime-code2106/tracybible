@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'tracy-bible-v2.1';
+const CACHE_VERSION = 'tracy-bible-v2.2';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -18,6 +18,8 @@ const STATIC_ASSETS = [
   '/js/caching.js',
   '/js/themes.js',
   '/js/welcome.js',
+  '/icons/icon-32.png',
+  '/icons/icon-180.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
