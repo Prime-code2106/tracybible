@@ -34,9 +34,7 @@ class SplashScreen {
 
     splash.innerHTML = `
       <div style="text-align:center;padding:40px 20px;">
-        <div style="font-size:64px;margin-bottom:24px;animation:fadeIn 0.8s ease;">✝</div>
-        <h1 style="font-size:42px;font-weight:700;color:#fff0f6;margin-bottom:12px;letter-spacing:-1px;animation:fadeIn 1s ease 0.3s both;">Tracy's Bible</h1>
-        <p style="font-size:16px;color:#d497b8;font-style:italic;animation:fadeIn 1s ease 0.5s both;">A gift of faith, love & grace</p>
+        <h1 style="font-size:56px;font-weight:700;color:#ffffff;margin-bottom:0;letter-spacing:-1.5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;animation:fadeIn 1s ease both;">Tracy's Bible</h1>
       </div>
       <style>
         @keyframes fadeIn {
