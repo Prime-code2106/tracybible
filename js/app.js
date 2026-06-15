@@ -392,7 +392,6 @@ function renderReader(verses) {
   // Add click listeners to verses
   document.querySelectorAll('.verse').forEach(verseEl => {
     verseEl.addEventListener('click', (e) => {
-      e.preventDefault();
       e.stopPropagation();
 
       const book = verseEl.dataset.book;
@@ -408,10 +407,7 @@ function renderReader(verses) {
 
 function verseMenu(e, book, chapter, verse, text) {
   console.log('verseMenu called:', {book, chapter, verse});
-  
-  e.stopPropagation();
-  e.preventDefault();
-  
+
   // Remove any existing menu and backdrop
   const existing = $('verse-menu');
   if (existing) {
